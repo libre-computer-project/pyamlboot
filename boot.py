@@ -7,7 +7,7 @@ import sys
 import os
 from pyamlboot import pyamlboot
 
-gx_boards = {"libretech-cc", "libretech-ac"}
+gx_boards = {"aml-s905x-cc", "aml-s805x-ac"}
 axg_boards = {}
 
 class BootUSB:
