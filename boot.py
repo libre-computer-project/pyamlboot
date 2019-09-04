@@ -7,8 +7,8 @@ import sys
 import os
 from pyamlboot import pyamlboot
 
-gx_boards = {"libretech-cc", "libretech-ac", "khadas-vim", "khadas-vim2", "odroid-c2", "nanopi-k2", "p212", "p230", "p231", "q200", "q201", "p281", "p241"}
-axg_boards = {"s400", "s420", "apollo" }
+gx_boards = {"libretech-cc", "libretech-ac"}
+axg_boards = {}
 
 class BootUSB:
     def __init__(self, board, fpath, upath):
