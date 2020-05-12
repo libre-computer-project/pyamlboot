@@ -7,7 +7,7 @@ import sys
 import os
 from pyamlboot import pyamlboot
 
-gx_boards = {"aml-s905x-cc", "aml-s805x-ac"}
+gx_boards = {"aml-s905x-cc", "aml-s805x-ac", "aml-s912-pc-s912"}
 axg_boards = {}
 
 class BootUSB:

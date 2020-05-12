@@ -10,9 +10,16 @@ if [ ! -d files/"$1" ]; then
 	exit 1
 fi
 FIRMWARE="`mktemp`"
-wget -O "$FIRMWARE" "http://share.loverpi.com/board/libre-computer-project/libre-computer-board/$1/firmware/latest.bin"
-if [ $? -ne 0 ]; then
-	echo "Unable to download board firmware!"
+if [ -z "$2" ]; then
+	wget -O "$FIRMWARE" "http://share.loverpi.com/board/libre-computer-project/libre-computer-board/$1/firmware/latest.bin"
+	if [ $? -ne 0 ]; then
+		echo "Unable to download board firmware!"
+		exit 1
+	fi
+elif [ -f "$2" ]; then
+	cp "$2" "$FIRMWARE"
+else
+	echo "Firmware file does not exist!"
 	exit 1
 fi
 FIRMWARE_SIZE=`stat --printf="%s" "$FIRMWARE"`
