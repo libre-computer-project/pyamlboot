@@ -1,0 +1,243 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Simple command line tool for flashing amlogic devices.
+
+Based on script 'flash-firmware.sh'
+Repository: https://github.com/libre-computer-project/pyamlboot
+"""
+
+
+import click
+from bs4 import BeautifulSoup
+import requests
+import wget
+import os
+import tempfile
+import usb
+
+__version__ = "0.1.0"
+
+# Firmware url locations
+url_board = (
+    "http://share.loverpi.com/board/libre-computer-project/libre-computer-board"
+)
+url_fw_board = url_board + "/##board##/firmware"
+
+# Firmware extension
+fw_ext = "bin"
+
+# USB vendor and product ids:
+# board: VendorID, ProductID
+usb_devices_list = {
+    "aml-s805x-ac": (0x1B8E, 0xC003),
+    "aml-s905x-cc": (0x1B8E, 0xC003),
+    "aml-s912-pc-s912": (0x1B8E, 0xC003),
+}
+
+
+def get_board_fw_files(url, ext="", pref=""):
+    """Return list of fw urls and files based on the given URL board.
+
+    Performs a request to the given URL and parses href nodes filtering by extension
+    (ext) and prefix (pref).
+
+    Based on:
+    https://stackoverflow.com/questions/11023530/
+    python-to-list-http-files-and-directories
+
+    Args:
+        url:  URL to be parsed.
+        ext:  Extension of the file to be filtered.
+        pref: Prefix of the file to be filtered.
+
+    Returns:
+        It returns a 2 lists: URL list and file list filtered.
+    """
+
+    page = requests.get(url).text
+    soup = BeautifulSoup(page, "html.parser")
+    urls = []
+    files = []
+    for node in soup.find_all("a"):
+        if node.get("href").startswith(pref) and node.get("href").endswith(ext):
+            urls.append(url + node.get("href"))
+            files.append(node.get("href").strip("/"))
+
+    return urls, files
+
+
+def get_board_fw_url(board):
+    """Return the firmware URL based on the given board."""
+    return url_fw_board.replace("##board##", board)
+
+
+def fw_dtb_create(file_size):
+    """Return a dtb file with the size of the given firmware binary in the header.
+
+    Example:
+        File size: 901120d, 0x000dc000
+
+    File to be created:
+        $ hexdump test
+        0000000 c000 000d
+        0000004
+
+    """
+    new_file, filename = tempfile.mkstemp()
+    cmd = 'printf "%.8x" {} | fold -w 2 | tac | tr -d "\\n" | '
+    'nl -s ": " -v 0 -w 1 | xxd -r > {}'.format(file_size, filename)
+    os.system(cmd)
+    return filename
+
+
+def fw_flash(scr, fdt, ramfs, board):
+    """Start the firmware download and flashing command.
+
+    Starts the boot.py with the proper arguments to flash the given board.
+
+    Args:
+        fdt:  fdt file.
+        ramfs:  ramfs file.
+        board: board type to be flashed.
+
+    """
+    cmd = "sudo ./boot.py --script {} --fdt {} --ramfs {} {}".format(
+        scr, fdt, ramfs, board
+    )
+    click.echo("flashing cmd: {}\n".format(cmd))
+    os.system(cmd)
+
+
+def dev_usb_detected(idvendor, idproduct):
+    """Returns if the USB device is connected based on the vendor and product
+    ids.
+
+    If idvendor or idproduct is defined as zero then, return a fake usb
+    connected. This means the USB device info is not provided to this script so
+    USB detection cannot be performed.
+    """
+    if idvendor == 0 or idproduct == 0:
+        return True
+
+    usb_detected = False
+    busses = usb.busses()
+    for bus in busses:
+        devices = bus.devices
+        for dev in devices:
+            if dev.idVendor == idvendor and dev.idProduct == idproduct:
+                usb_detected = True
+    return usb_detected
+
+
+def check_board_compatible(board):
+    """Returns if amlogic board is one of the available in the list."""
+    # Parse compatible board
+    boards_urls, boards = get_board_fw_files(url_board, pref=("aml"))
+    if board not in boards:
+        print("Error: board '{}' not found.".format(board))
+        return False
+    return True
+
+
+@click.version_option(version=__version__)
+@click.group()
+def main():
+    """amlogic firmware download and flashing."""
+    pass
+
+
+@main.command()
+def boards():
+    """amlogic boards available list.
+
+    Check all the amlogic based boards with released firmware.
+    """
+    fw_urls, fw_files = get_board_fw_files(url_board, pref=("aml"))
+    for fw_file in fw_files:
+        click.echo("Board name: {}".format(fw_file))
+
+
+@main.command()
+@click.option("--board", default="aml-s805x-ac", prompt=True,
+              help="Board name.")
+def firmware(board):
+    """amlogic firmware available list.
+
+    Check the firmware released files available for the given board.
+    """
+    # Parse compatible board
+    if not check_board_compatible(board):
+        return
+
+    click.echo("Available firmware for '{}' board:".format(board))
+
+    # Print list of firmware files
+    board_fw_url = get_board_fw_url(board)
+    fw_urls, fw_files = get_board_fw_files(board_fw_url, fw_ext)
+    for fw_file in fw_files:
+        click.echo("  file: {}".format(fw_file))
+
+
+@main.command()
+@click.option("--board", default="aml-s805x-ac", prompt=True,
+              help="Board name.")
+@click.option("--fw-file", default="latest.bin", prompt=True,
+              help="Firmware file name.")
+@click.option("--local", is_flag=True,
+              help="Specify if the Firmware file is local or remote")
+@click.option("--scr", default="flash-firmware.scr", help="Firmware script file name.")
+def firmware_flash(board, fw_file, local, scr):
+    """amlogic firmware download and flash.
+
+    Start firmware flashing procedure for the given board and firmware file.
+    """
+    # Parse compatible board
+    if not check_board_compatible(board):
+        return
+
+    # Check if USB is detected otherwise, abort the operation.
+    # Note: If USB Product and Vendor IDs are zeros then, the returned value
+    # will return true as if the device were connected.
+    usb_detected = dev_usb_detected(
+        usb_devices_list[board][0], usb_devices_list[board][1]
+    )
+    if not usb_detected:
+        click.echo("Error: USB is not detected")
+        return
+
+    # Check if local file is being passed or if we need to download it
+    if local:
+        if not os.path.isfile(fw_file):
+            click.echo("Firmware '{}' does not exist locally!".format(fw_file))
+            return
+        click.echo("Local firmware: '{}'".format(fw_file))
+    else:
+        click.echo("Firmware '{}' downloading for '{}' board".format(fw_file, board))
+
+        # Create board firmware url for the given file
+        fw_url = get_board_fw_url(board)
+        fw_url = fw_url + "/" + fw_file
+
+        # Download firmware file
+        click.echo("Downloading: \n{}".format(fw_url))
+        fw_file = wget.download(fw_url)
+
+    # Get firmware file size either downloaded or local
+    size = os.stat(fw_file).st_size
+
+    # Create DTB file with firmware size in the header
+    fdt = fw_dtb_create(size)
+
+    # Start flashing
+    fw_flash(scr, fdt, fw_file, board)
+
+    # Remove firmware (if downloaded) and DTB files
+    if not local:
+        os.remove(fw_file)
+    os.remove(fdt)
+
+
+if __name__ == "__main__":
+    main()
