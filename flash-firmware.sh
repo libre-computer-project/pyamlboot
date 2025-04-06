@@ -11,7 +11,7 @@ if [ ! -d files/"$1" ]; then
 fi
 FIRMWARE="`mktemp`"
 if [ -z "$2" ]; then
-	wget -O "$FIRMWARE" "http://share.loverpi.com/board/libre-computer-project/libre-computer-board/$1/firmware/latest.bin"
+	wget -O "$FIRMWARE" "https://boot.libre.computer/release/$1/$1-boot.bin"
 	if [ $? -ne 0 ]; then
 		echo "Unable to download board firmware!"
 		exit 1
