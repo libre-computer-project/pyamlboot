@@ -3,15 +3,15 @@
 cd $(readlink -f $(dirname ${BASH_SOURCE[0]}))
 
 declare -A BOARD=(
-	[aml-s805x-ac]="libretech-s805x-ac"
-	[aml-s905x-cc]="libretech-s905x-cc"
-	[aml-s905x-cc-v2]="libretech-s905x-cc-v2"
-	[aml-s905d-pc]="libretech-s905d-pc"
-	[aml-s912-pc]="libretech-s912-pc"
-	[aml-s905d3-cc]="libreteech-s905d3-cc"
-	[aml-s905d3-cc-v01]="libretech-s905d3-cc-v01"
-	[aml-a311d-cc]="libreteech-a311d-cc"
-	[aml-a311d-cc-v01]="libretech-a311d-cc-v01"
+	[aml-s805x-ac]="aml-s805x-ac"
+	[aml-s905x-cc]="aml-s905x-cc"
+	[aml-s905x-cc-v2]="aml-s905x-cc-v2"
+	[aml-s905d-pc]="aml-s905d-pc"
+	[aml-s912-pc]="aml-s912-pc"
+	[aml-s905d3-cc]="aml-s905d3-cc"
+	[aml-s905d3-cc-v01]="aml-s905d3-cc-v01"
+	[aml-a311d-cc]="aml-a311d-cc"
+	[aml-a311d-cc-v01]="aml-a311d-cc-v01"
 	)
 
 if [ -z "$1" ]; then
