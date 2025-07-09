@@ -5,25 +5,11 @@ cd $(readlink -f $(dirname ${BASH_SOURCE[0]}))
 
 AML_USB_ID="1b8e:c003"
 LC_USB_ID="1b8e:fada"
-PLATFORM_GXL="gxl"
-PLATFORM_G12="g12"
 if [ -z "$WAIT_TIME" ]; then
 	WAIT_TIME=60
 fi
 
-declare -A BOARD_GXL=(
-	[aml-s805x-ac]="aml-s805x-ac"
-	[aml-s905x-cc]="aml-s905x-cc"
-	[aml-s905x-cc-v2]="aml-s905x-cc-v2"
-	[aml-s905d-pc]="aml-s905d-pc"
-	[aml-s912-pc]="aml-s912-pc"
-	)
-declare -A BOARD_G12=(
-	[aml-s905d3-cc]="aml-s905d3-cc"
-	[aml-s905d3-cc-v01]="aml-s905d3-cc-v01"
-	[aml-a311d-cc]="aml-a311d-cc"
-	[aml-a311d-cc-v01]="aml-a311d-cc-v01"
-	)
+. board.sh
 
 if [ -z "$1" ]; then
 	echo "$0 board firmware-update"
@@ -33,22 +19,26 @@ if [ -z "$1" ]; then
 fi
 board="${1,,}"
 
+board_check "$board"
+
 if ! python3 -c "import usb.core"; then
 	echo "pyamlboot requires python3-usb"
 	exit 1
 fi
 
 if [ ! -z "$2" ] && [ "$2" = "firmware-update" ]; then
-	if [ "$board" = "aml-s905x-cc" ]; then
-		read -n 1 -p "AML-S905X-CC does not have onboard firmware. This will update the eMMC/SD firmware. Press Control+C to cancel."
-	fi
 	if ! which dfu-util; then
 		echo "firmware-update requires dfu-util"
 		exit 1
 	fi
-	firmware=$(mktemp)
-	trap "rm \"$firmware\"" EXIT
-	wget -O "$firmware" "https://boot.libre.computer/ci/$board"
+	if [ -z "$firmware" ]; then
+		if [ "$board" = "aml-s905x-cc" ]; then
+			read -n 1 -p "AML-S905X-CC does not have onboard firmware. This will update the eMMC/SD firmware. Press Control+C to cancel."
+		fi
+		firmware=$(mktemp)
+		trap "rm \"$firmware\"" EXIT
+		wget -O "$firmware" "https://boot.libre.computer/ci/$board"
+	fi
 fi
 
 if [[ -v "BOARD_GXL[$board]" ]]; then
@@ -90,7 +80,7 @@ while ! lsusb -d "$AML_USB_ID" > /dev/null 2>&1; do
 		fi
 	fi
 	sleep 1
-	((wait_time++))
+	wait_time=$((wait_time+1))
 	echo -en "\rWaiting for device enumeration...${wait_time}s"
 	if [ "$WAIT_TIME" -ne 0 ] && [ "$wait_time" = "$WAIT_TIME" ]; then
 		echo -en "\nDevice could not be found after ${WAIT_TIME}s"
