@@ -4,6 +4,7 @@ cd $(readlink -f $(dirname ${BASH_SOURCE[0]}))
 
 PLATFORM_GXL="gxl"
 PLATFORM_G12="g12"
+WAIT_TIME=60
 
 declare -A BOARD_GXL=(
 	[aml-s805x-ac]="aml-s805x-ac"
@@ -74,6 +75,25 @@ else
 	echo "BOARD: $board does not exist."
 	exit 1
 fi
+
+wait_time=0
+while ! lsusb -d "1b8e:c003" > /dev/null 2>&1; do
+	if [ "$wait_time" -eq 0 ]; then
+		echo -n "Please plug in the board's OTG port with the USB/BOOT button held down."
+		if [ "$WAIT_TIME" -ne 0 ]; then
+			echo " Waiting for ${WAIT_TIME}s..."
+		fi
+	fi
+	sleep 1
+	((wait_time++))
+	echo -en "\rWaiting for device enumeration...${wait_time}s"
+	if [ "$WAIT_TIME" -ne 0 ] && [ "$wait_time" = "$WAIT_TIME" ]; then
+		echo -en "\nDevice could not be found after ${WAIT_TIME}s"
+		exit 1
+	fi
+done
+
+echo
 
 if [ "$platform" = $PLATFORM_GXL ]; then
 	./boot.py $action "${BOARD_GXL[$board]}"
