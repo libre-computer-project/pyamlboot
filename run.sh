@@ -26,7 +26,7 @@ if [ -z "$1" ]; then
 	echo "$0 board [action]"
 	exit 1
 fi
-board="$1"
+board="${1,,}"
 
 if ! python3 -c "import usb.core"; then
 	echo "pyamlboot requires python3-usb"
