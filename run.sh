@@ -1,10 +1,15 @@
 #!/bin/bash
-#
+set -e
+
 cd $(readlink -f $(dirname ${BASH_SOURCE[0]}))
 
+AML_USB_ID="1b8e:c003"
+LC_USB_ID="1b8e:fada"
 PLATFORM_GXL="gxl"
 PLATFORM_G12="g12"
-WAIT_TIME=60
+if [ -z "$WAIT_TIME" ]; then
+	WAIT_TIME=60
+fi
 
 declare -A BOARD_GXL=(
 	[aml-s805x-ac]="aml-s805x-ac"
@@ -77,7 +82,7 @@ else
 fi
 
 wait_time=0
-while ! lsusb -d "1b8e:c003" > /dev/null 2>&1; do
+while ! lsusb -d "$AML_USB_ID" > /dev/null 2>&1; do
 	if [ "$wait_time" -eq 0 ]; then
 		echo -n "Please plug in the board's OTG port with the USB/BOOT button held down."
 		if [ "$WAIT_TIME" -ne 0 ]; then
@@ -102,6 +107,6 @@ else
 fi
 
 if [ ! -z "$2" ] && [ "$2" = "firmware-update" ]; then
-	dfu-util --device 1b8e:fada -a 0 -w -D "$firmware"
+	dfu-util --device "$LC_USB_ID" -a 0 -w -D "$firmware"
 fi
 
