@@ -27,9 +27,18 @@ if [ -z "$1" ]; then
 fi
 board="$1"
 
+if ! python3 -c "import usb.core"; then
+	echo "pyamlboot requires python3-usb"
+	exit 1
+fi
+
 if [ ! -z "$2" ] && [ "$2" = "firmware-update" ]; then
 	if [ "$board" = "aml-s905x-cc" ]; then
 		read -n 1 -p "AML-S905X-CC does not have onboard firmware. This will update the eMMC/SD firmware. Press Control+C to cancel."
+	fi
+	if ! which dfu-util; then
+		echo "firmware-update requires dfu-util"
+		exit 1
 	fi
 	firmware=$(mktemp)
 	trap "rm \"$firmware\"" EXIT
