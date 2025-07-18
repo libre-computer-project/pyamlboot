@@ -3,6 +3,7 @@ PLATFORM_G12="g12"
 
 declare -A BOARD_GXL=(
 	[aml-s805x-ac]="aml-s805x-ac"
+	[aml-s805x-ac-v2]="aml-s805x-ac-v2"
 	[aml-s905x-cc]="aml-s905x-cc"
 	[aml-s905x-cc-v2]="aml-s905x-cc-v2"
 	[aml-s905d-pc]="aml-s905d-pc"
