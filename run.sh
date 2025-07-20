@@ -53,11 +53,11 @@ if [[ -v "BOARD_GXL[$board]" ]]; then
 			done
 			exit
 		else
-			if [ ! -f "scripts/$action.scr" ]; then
-				echo "ACTION: $action does not exist." >&2
+			if [ ! -f "scripts/$2.scr" ]; then
+				echo "ACTION: $2 does not exist." >&2
 				exit 1
 			fi
-			action="--script \"scripts/$2.scr\""
+			action="--script scripts/$2.scr"
 		fi
 	fi
 elif [[ -v "BOARD_G12[$board]" ]]; then
