@@ -12,8 +12,10 @@ declare -A BOARD_GXL=(
 declare -A BOARD_G12=(
 	[aml-s905d3-cc]="aml-s905d3-cc"
 	[aml-s905d3-cc-v01]="aml-s905d3-cc-v01"
+	[aml-s905d3-cm]="aml-s905d3-cm"
 	[aml-a311d-cc]="aml-a311d-cc"
 	[aml-a311d-cc-v01]="aml-a311d-cc-v01"
+	[aml-a311d-cc]="aml-a311d-cm"
 	)
 
 board_is_supported(){
