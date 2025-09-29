@@ -24,18 +24,30 @@ for gxl_b in ${gxl_boards[@]}; do
 	if [ ! -z "$board" ] && [ "$board" != "$gxl_b" ]; then
 		continue
 	fi
-	cp $1/$gxl_b.usb.tpl $gxl_b/u-boot.bin.usb.tpl
+	if [ -f "$1/$gxl_b-spi" ]; then
+		gxl_b_src=$gxl_b-spi
+	else
+		gxl_b_src=$gxl_b
+	fi
+	cp $1/$gxl_b_src.usb.tpl $gxl_b/u-boot.bin.usb.tpl
 done
 for gxl_b in ${gxl_boards[@]}; do 
 	if [ ! -z "$board" ] && [ "$board" != "$gxl_b" ]; then
 		continue
 	fi
-	cp $1/$gxl_b.usb.bl2 $gxl_b/u-boot.bin.usb.bl2
+	if [ -f "$1/$gxl_b-spi" ]; then
+		gxl_b_src=$gxl_b-spi
+	else
+		gxl_b_src=$gxl_b
+	fi
+	cp $1/$gxl_b_src.usb.bl2 $gxl_b/u-boot.bin.usb.bl2
 done
 
 g12_boards=(
 	aml-s905d3-cc
+	aml-s905d3-cm
 	aml-a311d-cc
+	aml-a311d-cm
 )
 for g12_b in ${g12_boards[@]}; do
 	if [ ! -z "$board" ] && [ "$board" != "$gxl_b" ]; then
