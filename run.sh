@@ -8,6 +8,9 @@ LC_USB_ID="1b8e:fada"
 if [ -z "$WAIT_TIME" ]; then
 	WAIT_TIME=60
 fi
+if [ -z "$LOOP" ]; then
+	LOOP=0
+fi
 
 . board.sh
 
@@ -37,7 +40,7 @@ if [ ! -z "$2" ] && [ "$2" = "firmware-update" ]; then
 		fi
 		firmware=$(mktemp)
 		trap "rm \"$firmware\"" EXIT
-		wget -O "$firmware" "https://boot.libre.computer/ci/$board"
+		wget -O "$firmware" "https://boot.libre.computer/ci/$board-spi"
 	fi
 fi
 
@@ -71,6 +74,8 @@ else
 	exit 1
 fi
 
+while true; do
+
 wait_time=0
 while ! lsusb -d "$AML_USB_ID" > /dev/null 2>&1; do
 	if [ "$wait_time" -eq 0 ]; then
@@ -100,3 +105,7 @@ if [ ! -z "$2" ] && [ "$2" = "firmware-update" ]; then
 	dfu-util --device "$LC_USB_ID" -a 0 -w -D "$firmware"
 fi
 
+	if [ "$LOOP" -eq 0 ]; then
+		break
+	fi
+done
