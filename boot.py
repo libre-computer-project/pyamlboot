@@ -158,12 +158,14 @@ def parse_cmdline(boards):
     return args
 
 if __name__ == '__main__':
-    # Try to get boot files from the python package, or from local tree
-    try:
-        dist = pkg_resources.get_distribution('pyamlboot')
-        fpath = dist.get_resource_filename(pkg_resources.ResourceManager(), "files")
-    except:
-        fpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "files")
+    # Prefer local files tree over installed package
+    fpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "files")
+    if not os.path.isdir(fpath):
+        try:
+            dist = pkg_resources.get_distribution('pyamlboot')
+            fpath = dist.get_resource_filename(pkg_resources.ResourceManager(), "files")
+        except:
+            pass
     boards = list_boards(fpath)
     args = parse_cmdline(boards)
     usb = BootUSB(args.board, fpath, args.upath)
