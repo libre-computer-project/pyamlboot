@@ -15,11 +15,11 @@ declare -A BOARD_G12=(
 	[aml-s905d3-cm]="aml-s905d3-cm"
 	[aml-a311d-cc]="aml-a311d-cc"
 	[aml-a311d-cc-v01]="aml-a311d-cc-v01"
-	[aml-a311d-cc]="aml-a311d-cm"
+	[aml-a311d-cm]="aml-a311d-cm"
 	)
 
 board_is_supported(){
-	[[ ! -v "BOARD_GXL[$1]" ]] || [[ ! -v "BOARD_G12[$1]" ]]
+	[[ -v "BOARD_GXL[$1]" ]] || [[ -v "BOARD_G12[$1]" ]]
 }
 
 board_check(){
