@@ -16,6 +16,7 @@ fi
 
 if [ -z "$1" ]; then
 	echo "$0 board firmware-update"
+	echo "$0 board firmware-flash [config]"
 	echo "$0 board list"
 	echo "$0 board [action]"
 	exit 1
@@ -29,7 +30,7 @@ if ! python3 -c "import usb.core"; then
 	exit 1
 fi
 
-if [ ! -z "$2" ] && [ "$2" = "firmware-update" ]; then
+if [ ! -z "$2" ] && [ "$2" = "firmware-update" -o "$2" = "firmware-flash" ]; then
 	if ! which dfu-util; then
 		echo "firmware-update requires dfu-util"
 		exit 1
@@ -44,14 +45,26 @@ if [ ! -z "$2" ] && [ "$2" = "firmware-update" ]; then
 	fi
 fi
 
+if [ ! -z "$2" ] && [ "$2" = "firmware-flash" ]; then
+	fit="${firmware%.*}.fit"
+	if [ ! -f "$fit" ]; then
+		echo "ERROR: Overlay FIT not found: $fit" >&2
+		exit 1
+	fi
+	if [ ! -z "$3" ] && [ ! -f "$3" ]; then
+		echo "ERROR: Config file not found: $3" >&2
+		exit 1
+	fi
+fi
+
 if [[ -v "BOARD_GXL[$board]" ]]; then
 	platform=$PLATFORM_GXL
-	if [ ! -z "$2" ] && [ "$2" != "firmware-update" ]; then
+	if [ ! -z "$2" ] && [ "$2" != "firmware-update" ] && [ "$2" != "firmware-flash" ]; then
 		if [ "$2" = "list" ]; then
 			for script in scripts/*.scr; do
 				if [ -h "$script" ]; then
 					continue
-				fi		
+				fi
 				echo "${script/scripts\//}" | sed "s/.scr\$//"
 			done
 			exit
@@ -63,9 +76,12 @@ if [[ -v "BOARD_GXL[$board]" ]]; then
 			action="--script scripts/$2.scr"
 		fi
 	fi
+	if [ ! -z "$2" ] && [ "$2" = "firmware-flash" ]; then
+		action="--script scripts/dfu-sf.scr"
+	fi
 elif [[ -v "BOARD_G12[$board]" ]]; then
 	platform=$PLATFORM_G12
-	if [ ! -z "$2" ] && [ "$2" != "firmware-update" ]; then
+	if [ ! -z "$2" ] && [ "$2" != "firmware-update" ] && [ "$2" != "firmware-flash" ]; then
 		echo "PLATFORM: $platform does not support actions." >&2
 		exit 1
 	fi
@@ -94,7 +110,7 @@ while ! lsusb -d "$AML_USB_ID" > /dev/null 2>&1; do
 done
 
 echo
-
+set -x
 if [ "$platform" = $PLATFORM_GXL ]; then
 	./boot.py $action "${BOARD_GXL[$board]}"
 else
@@ -103,6 +119,14 @@ fi
 
 if [ ! -z "$2" ] && [ "$2" = "firmware-update" ]; then
 	dfu-util --device "$LC_USB_ID" -a 0 -w -D "$firmware"
+fi
+
+if [ ! -z "$2" ] && [ "$2" = "firmware-flash" ]; then
+	dfu-util --device "$LC_USB_ID" -a u-boot-bin -w -D "$firmware"
+	dfu-util --device "$LC_USB_ID" -a fit -D "$fit"
+	if [ ! -z "$3" ]; then
+		dfu-util --device "$LC_USB_ID" -a config -D "$3"
+	fi
 fi
 
 	if [ "$LOOP" -eq 0 ]; then

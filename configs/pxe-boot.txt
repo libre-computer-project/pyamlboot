@@ -1,0 +1,1 @@
+bootcmd=while true; do dhcp; if pxe get; then pxe boot; fi; sleep 5; done
