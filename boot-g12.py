@@ -34,11 +34,15 @@ def parse_cmdline(fpath):
     return args
 
 if __name__ == '__main__':
-    try:
-        dist = pkg_resources.get_distribution('pyamlboot')
-        fpath = os.path.join(dist.get_resource_filename(pkg_resources.ResourceManager(), "files")) 
-    except:
-        fpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "files")
+    local_fpath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "files")
+    if os.path.isdir(local_fpath):
+        fpath = local_fpath
+    else:
+        try:
+            dist = pkg_resources.get_distribution('pyamlboot')
+            fpath = os.path.join(dist.get_resource_filename(pkg_resources.ResourceManager(), "files"))
+        except:
+            fpath = local_fpath
 
     args = parse_cmdline(fpath)
 
